@@ -1,101 +1,96 @@
-class DataRow:
-    def __init__(self, c_attrs, d_attrs):
-        """Data row
+class DecisionTable():
+    def __init__(self, attributes):
+        self.currObjId = 0
+        self.attributes = {}
+        self.attributesInv = {}
+        for attribute in attributes:
+            self.attributes[attribute] = {}
+            self.attributesInv[attribute] = {}
 
-        Args:
-            c_attrs (dict): conditions
-            d_attrs (bool): decision
-        """
-        self.c_attrs = c_attrs
-        self.d_attrs = d_attrs
+    def getAllObjects(self):
+        for attributeName, dictionary in self.attributes.items():
+            return frozenset(dictionary.keys())  
+        
+    def insertObject(self, valuesDict):
+        objId = self.currObjId
+        self.currObjId += 1
+        for attribute, value in valuesDict.items():
+            self.attributes[attribute][objId] = value
+            if not value in self.attributesInv[attribute]:
+                self.attributesInv[attribute][value] = frozenset()
+            self.attributesInv[attribute][value] = self.attributesInv[attribute][value].union([objId])
 
-
-class DecisionTable:
-    def __init__(self, U: set(DataRow), C: set, D: set(bool)):
-        """Decision table
-
-        Args:
-            U (set(DataRow)): objects
-            C (set): condition attributes
-            D (set(bool)): decision attributes
-        """
-
-        self.U = U
-        self.C = C
-        self.D = D
-
-
-def lower_bound(T: set) -> set:
-    """[summary]
-
-    Args:
-        T (set): [description]
-
-    Returns:
-        set: [description]
-    """
-    return T
-
-
-def upper_bound(T: set) -> set:
-    """[summary]
-
-    Args:
-        T (set): [description]
-
-    Returns:
-        set: [description]
-    """
-    return T
-
-
-def lem2(X: DecisionTable, C: set) -> set:
-    """LEM2 algorithm
-
-    Args:
-        X (DecisionTable): upper or lower decisive class approximation
-        C (set): condition attributes
-
-    Returns:
-        set: single local X ...
-    """
-    G = X
-
-    # T - set of conditions
-    T = set()
-    for q in C:
-        vq = X.C[q]
-        t = (q, vq) # elementary condition
-        T.add(t)
-
-    def abscl(t):
-        # u: DataRow from X.U
-        (q, vq) = t
-        return set(u for u in X.U if u.c_attrs[q] == vq)
-
-    # [t]
-    t_absclass = map(abscl, T)
-
+    def tBlock(self, condition):
+        return self.attributesInv[condition[0]][condition[1]]
     
+    def TSquare(self, conditions):
+        # if len(conditions) == 0:
+        #     return frozenset()
+        objs = self.getAllObjects()
+        for condition in conditions:
+            objs = objs.intersection(self.tBlock(condition))
+        return objs
 
-    return set()
+    def getAllConditions(self):
+        return [(attr, val) for attr in self.attributes.keys() for val in self.attributesInv[attr].keys() if attr != "decision"]
+
+
+    def show(self):
+        print(self.currObjId)
+        print(self.attributes)
+        print(self.attributesInv)
+
+
+def lem2(objs, decisionTable):
+    XObjs = frozenset(objs) #decisionTable.getAllObjects()
+    G = frozenset(objs)
+    Tau = frozenset()
+    while G:
+        T = frozenset()
+        TG = {t for t in decisionTable.getAllConditions() if decisionTable.tBlock(t) & G}
+        while (len (T) == 0) or (not (decisionTable.TSquare(T) <= XObjs)):
+            helper = [(t, len(decisionTable.tBlock(t)), len(decisionTable.tBlock(t).intersection(G))) for t in TG]
+            maxIntersectionVal = max(helper, key = lambda x: x[2])[2]
+            helper = list(filter(lambda x : x[2] == maxIntersectionVal, helper))
+            t = min(helper, key=lambda x : x[1])[0] if len(helper) > 1 else helper[0][0]
+            T = T.union({t})
+            G = G & decisionTable.tBlock(t)
+            TG = {t for t in decisionTable.getAllConditions() if decisionTable.tBlock(t) & G} - T
+        TCopy = frozenset(T)
+        for t in TCopy:
+            if decisionTable.TSquare(T - {t}) <= XObjs:
+                T = T - {t}
+        Tau = Tau | {T}
+        TSquaresUnion = frozenset()
+        TSquares = [decisionTable.TSquare(T) for T in Tau]
+        for elem in TSquares:
+            TSquaresUnion = TSquaresUnion | elem 
+        G = XObjs - TSquaresUnion
+    TauCopy = frozenset(Tau)
+    for T in TauCopy:
+        if frozenset([decisionTable.TSquare(Tprim) for Tprim in Tau - {T}]) == XObjs:
+            Tau = Tau - {T}
+    return Tau
+        
 
 
 
-C = set('headache', 'fever')
-D = set('flu')
 
-U1c = {'headache': True, 'fever': 'normal'}
-U1d = False
-U1 = DataRow(U1c, U1d)
 
-U2c = {'headache': True, 'fever': 'high'}
-U2d = True
-U2 = DataRow(U1c, U1d)
 
-U = set(U1, U2)
 
-T = DecisionTable(U, C, D)
 
-X = lower_bound(T)
-res = lem2(X, C)
+exampleDecisionTable = DecisionTable(["fever", "headache", "decision"])
+exampleDecisionTable.insertObject({"fever":"high", "headache": True, "decision": True})
+exampleDecisionTable.insertObject({"fever":"low", "headache": True, "decision": False})
+exampleDecisionTable.insertObject({"fever":"low", "headache": False, "decision":False})
+exampleDecisionTable.insertObject({"fever":"medium", "headache": True, "decision":True})
+exampleDecisionTable.insertObject({"fever":"medium", "headache": False, "decision":False})
+exampleDecisionTable.insertObject({"fever":"high", "headache": False, "decision":True})
+
+exampleDecisionTable.show()
+
+print("Lem2 output:")
+print(lem2([0,3,5], exampleDecisionTable))
+
+
