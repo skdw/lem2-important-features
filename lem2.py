@@ -1,3 +1,10 @@
+"""
+    Object -> Int
+    Condition -> (attribute_name, value)
+    Attributes -> dict(attribute_name, Attribute)
+    Attribute -> dict(Object, Value)
+    AttributeInv -> dict(Value, frozenset(Object))
+"""
 from functools import reduce
 
 class DecisionTable():
@@ -61,6 +68,9 @@ class DecisionTable():
         print(self.attributes)
         print(self.attributesInv)
 
+    def getObjectsSatisfyingConditions(self, conditions):
+        return reduce(lambda A,B: A|B, [self.attributesInv[condition[0]][condition[1]]for condition in conditions], frozenset())
+
     def getRulesForObjects(self, objs, verbose=False):
         XObjs = frozenset(objs) 
         G = frozenset(objs)
@@ -95,4 +105,7 @@ exampleDecisionTable.insertObject({"fever":"high", "headache": False})
 
 print("Lem2 output:")
 rules = exampleDecisionTable.getRulesForObjects([0,3,5],verbose=True)
+
 DecisionTable.extractUsedAttributes(rules, verbose=True)
+
+print(exampleDecisionTable.getObjectsSatisfyingConditions([("fever", "low"), ("fever", "high")]))
