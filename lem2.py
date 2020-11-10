@@ -1,4 +1,28 @@
+from functools import reduce
+
 class DecisionTable():
+    @staticmethod
+    def printRules(rules):
+        print("Rules:")
+        for i, rule in enumerate(rules):
+            for condition in rule:
+                print(f"({condition[0]}={condition[1]})",end="")
+            if(i != len(rules)-1):
+                print(" OR")
+            else:
+                print()
+
+    @staticmethod
+    def extractUsedAttributes(rules, verbose=False):
+        usedAttributes = set()
+        for rule in rules:
+            for condition in rule:
+                usedAttributes.add(condition[0])
+        if verbose:
+            print("Used attributes:")
+            print(usedAttributes)
+        return usedAttributes
+    
     def __init__(self, attributes):
         self.currObjId = 0
         self.attributes = {}
@@ -24,73 +48,51 @@ class DecisionTable():
         return self.attributesInv[condition[0]][condition[1]]
     
     def TSquare(self, conditions):
-        # if len(conditions) == 0:
-        #     return frozenset()
-        objs = self.getAllObjects()
+        objs = self.getAllObjects() #for empty conditions collection, maybe we should return empty objs set rather than set of all objects?
         for condition in conditions:
-            objs = objs.intersection(self.tBlock(condition))
+            objs = objs & self.tBlock(condition)
         return objs
 
     def getAllConditions(self):
-        return [(attr, val) for attr in self.attributes.keys() for val in self.attributesInv[attr].keys() if attr != "decision"]
-
+        return [(attr, val) for attr in self.attributes.keys() for val in self.attributesInv[attr].keys()]
 
     def show(self):
         print(self.currObjId)
         print(self.attributes)
         print(self.attributesInv)
 
+    def getRulesForObjects(self, objs, verbose=False):
+        XObjs = frozenset(objs) 
+        G = frozenset(objs)
+        Tau = frozenset()
+        while G:
+            T = frozenset()
+            TG = {t for t in self.getAllConditions() if self.tBlock(t) & G}
+            while not T or not (self.TSquare(T) <= XObjs):
+                helper = [(t, len(self.tBlock(t)), len(self.tBlock(t) & G)) for t in TG]
+                maxIntersectionVal = max(helper, key = lambda x: x[2])[2]
+                helper = [elem for elem in helper if elem[2] == maxIntersectionVal]
+                t = min(helper, key=lambda x : x[1])[0] if len(helper) > 1 else helper[0][0]
+                T = T | {t}
+                G = G & self.tBlock(t)
+                TG = {t for t in self.getAllConditions() if self.tBlock(t) & G} - T
+            T = T - {t for t in T if self.TSquare(T-{t}) <= XObjs}
+            Tau = Tau | {T}
+            G = XObjs - reduce(lambda A,B: A|B, [self.TSquare(T) for T in Tau], frozenset())
+        TauCopy = frozenset(Tau)
+        Tau = Tau - {T for T in Tau if reduce(lambda A,B: A|B, [self.TSquare(Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs}
+        if verbose:
+            DecisionTable.printRules(Tau)
+        return Tau
 
-def lem2(objs, decisionTable):
-    XObjs = frozenset(objs) #decisionTable.getAllObjects()
-    G = frozenset(objs)
-    Tau = frozenset()
-    while G:
-        T = frozenset()
-        TG = {t for t in decisionTable.getAllConditions() if decisionTable.tBlock(t) & G}
-        while (len (T) == 0) or (not (decisionTable.TSquare(T) <= XObjs)):
-            helper = [(t, len(decisionTable.tBlock(t)), len(decisionTable.tBlock(t).intersection(G))) for t in TG]
-            maxIntersectionVal = max(helper, key = lambda x: x[2])[2]
-            helper = list(filter(lambda x : x[2] == maxIntersectionVal, helper))
-            t = min(helper, key=lambda x : x[1])[0] if len(helper) > 1 else helper[0][0]
-            T = T.union({t})
-            G = G & decisionTable.tBlock(t)
-            TG = {t for t in decisionTable.getAllConditions() if decisionTable.tBlock(t) & G} - T
-        TCopy = frozenset(T)
-        for t in TCopy:
-            if decisionTable.TSquare(T - {t}) <= XObjs:
-                T = T - {t}
-        Tau = Tau | {T}
-        TSquaresUnion = frozenset()
-        TSquares = [decisionTable.TSquare(T) for T in Tau]
-        for elem in TSquares:
-            TSquaresUnion = TSquaresUnion | elem 
-        G = XObjs - TSquaresUnion
-    TauCopy = frozenset(Tau)
-    for T in TauCopy:
-        if frozenset([decisionTable.TSquare(Tprim) for Tprim in Tau - {T}]) == XObjs:
-            Tau = Tau - {T}
-    return Tau
-        
-
-
-
-
-
-
-
-
-exampleDecisionTable = DecisionTable(["fever", "headache", "decision"])
-exampleDecisionTable.insertObject({"fever":"high", "headache": True, "decision": True})
-exampleDecisionTable.insertObject({"fever":"low", "headache": True, "decision": False})
-exampleDecisionTable.insertObject({"fever":"low", "headache": False, "decision":False})
-exampleDecisionTable.insertObject({"fever":"medium", "headache": True, "decision":True})
-exampleDecisionTable.insertObject({"fever":"medium", "headache": False, "decision":False})
-exampleDecisionTable.insertObject({"fever":"high", "headache": False, "decision":True})
-
-exampleDecisionTable.show()
+exampleDecisionTable = DecisionTable(["fever", "headache"])
+exampleDecisionTable.insertObject({"fever":"high", "headache": True})
+exampleDecisionTable.insertObject({"fever":"low", "headache": True})
+exampleDecisionTable.insertObject({"fever":"low", "headache": False})
+exampleDecisionTable.insertObject({"fever":"medium", "headache": True})
+exampleDecisionTable.insertObject({"fever":"medium", "headache": False})
+exampleDecisionTable.insertObject({"fever":"high", "headache": False})
 
 print("Lem2 output:")
-print(lem2([0,3,5], exampleDecisionTable))
-
-
+rules = exampleDecisionTable.getRulesForObjects([0,3,5],verbose=True)
+DecisionTable.extractUsedAttributes(rules, verbose=True)
