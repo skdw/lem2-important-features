@@ -7,13 +7,14 @@
 """
 from functools import reduce
 
+
 class DecisionTable():
     @staticmethod
     def printRules(rules):
         print("Rules:")
         for i, rule in enumerate(rules):
             for condition in rule:
-                print(f"({condition[0]}={condition[1]})",end="")
+                print(f"({condition[0]}={condition[1]})", end="")
             if(i != len(rules)-1):
                 print(" OR")
             else:
@@ -29,7 +30,7 @@ class DecisionTable():
             print("Used attributes:")
             print(usedAttributes)
         return usedAttributes
-    
+
     def __init__(self, attributes):
         self.currObjId = 0
         self.attributes = {}
@@ -39,9 +40,9 @@ class DecisionTable():
             self.attributesInv[attribute] = {}
 
     def getAllObjects(self):
-        for attributeName, dictionary in self.attributes.items():
-            return frozenset(dictionary.keys())  
-        
+        for _, dictionary in self.attributes.items():
+            return frozenset(dictionary.keys())
+
     def insertObject(self, valuesDict):
         objId = self.currObjId
         self.currObjId += 1
@@ -49,13 +50,15 @@ class DecisionTable():
             self.attributes[attribute][objId] = value
             if not value in self.attributesInv[attribute]:
                 self.attributesInv[attribute][value] = frozenset()
-            self.attributesInv[attribute][value] = self.attributesInv[attribute][value].union([objId])
+            self.attributesInv[attribute][value] = self.attributesInv[attribute][value].union([
+                                                                                              objId])
 
     def tBlock(self, condition):
         return self.attributesInv[condition[0]][condition[1]]
-    
+
     def TSquare(self, conditions):
-        objs = self.getAllObjects() #for empty conditions collection, maybe we should return empty objs set rather than set of all objects?
+        # for empty conditions collection, maybe we should return empty objs set rather than set of all objects?
+        objs = self.getAllObjects()
         for condition in conditions:
             objs = objs & self.tBlock(condition)
         return objs
@@ -69,43 +72,52 @@ class DecisionTable():
         print(self.attributesInv)
 
     def getObjectsSatisfyingConditions(self, conditions):
-        return reduce(lambda A,B: A|B, [self.attributesInv[condition[0]][condition[1]]for condition in conditions], frozenset())
+        return reduce(lambda A, B: A | B, [self.attributesInv[condition[0]][condition[1]]for condition in conditions], frozenset())
 
     def getRulesForObjects(self, objs, verbose=False):
-        XObjs = frozenset(objs) 
+        XObjs = frozenset(objs)
         G = frozenset(objs)
         Tau = frozenset()
         while G:
             T = frozenset()
             TG = {t for t in self.getAllConditions() if self.tBlock(t) & G}
             while not T or not (self.TSquare(T) <= XObjs):
-                helper = [(t, len(self.tBlock(t)), len(self.tBlock(t) & G)) for t in TG]
-                maxIntersectionVal = max(helper, key = lambda x: x[2])[2]
-                helper = [elem for elem in helper if elem[2] == maxIntersectionVal]
-                t = min(helper, key=lambda x : x[1])[0] if len(helper) > 1 else helper[0][0]
+                helper = [(t, len(self.tBlock(t)), len(self.tBlock(t) & G))
+                          for t in TG]
+                maxIntersectionVal = max(helper, key=lambda x: x[2])[2]
+                helper = [elem for elem in helper if elem[2]
+                          == maxIntersectionVal]
+                t = min(helper, key=lambda x: x[1])[
+                    0] if len(helper) > 1 else helper[0][0]
                 T = T | {t}
                 G = G & self.tBlock(t)
-                TG = {t for t in self.getAllConditions() if self.tBlock(t) & G} - T
+                TG = {t for t in self.getAllConditions() if self.tBlock(t)
+                      & G} - T
             T = T - {t for t in T if self.TSquare(T-{t}) <= XObjs}
             Tau = Tau | {T}
-            G = XObjs - reduce(lambda A,B: A|B, [self.TSquare(T) for T in Tau], frozenset())
+            G = XObjs - reduce(lambda A, B: A | B,
+                               [self.TSquare(T) for T in Tau], frozenset())
         TauCopy = frozenset(Tau)
-        Tau = Tau - {T for T in Tau if reduce(lambda A,B: A|B, [self.TSquare(Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs}
+        Tau = Tau - {T for T in Tau if reduce(lambda A, B: A | B, [self.TSquare(
+            Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs}
         if verbose:
             DecisionTable.printRules(Tau)
         return Tau
 
-exampleDecisionTable = DecisionTable(["fever", "headache"])
-exampleDecisionTable.insertObject({"fever":"high", "headache": True})
-exampleDecisionTable.insertObject({"fever":"low", "headache": True})
-exampleDecisionTable.insertObject({"fever":"low", "headache": False})
-exampleDecisionTable.insertObject({"fever":"medium", "headache": True})
-exampleDecisionTable.insertObject({"fever":"medium", "headache": False})
-exampleDecisionTable.insertObject({"fever":"high", "headache": False})
 
-print("Lem2 output:")
-rules = exampleDecisionTable.getRulesForObjects([0,3,5],verbose=True)
+if __name__ == "__main__":
+    exampleDecisionTable = DecisionTable(["fever", "headache"])
+    exampleDecisionTable.insertObject({"fever": "high", "headache": True})
+    exampleDecisionTable.insertObject({"fever": "low", "headache": True})
+    exampleDecisionTable.insertObject({"fever": "low", "headache": False})
+    exampleDecisionTable.insertObject({"fever": "medium", "headache": True})
+    exampleDecisionTable.insertObject({"fever": "medium", "headache": False})
+    exampleDecisionTable.insertObject({"fever": "high", "headache": False})
 
-DecisionTable.extractUsedAttributes(rules, verbose=True)
+    print("Lem2 output:")
+    rules = exampleDecisionTable.getRulesForObjects([0, 3, 5], verbose=True)
 
-print(exampleDecisionTable.getObjectsSatisfyingConditions([("fever", "low"), ("fever", "high")]))
+    DecisionTable.extractUsedAttributes(rules, verbose=True)
+
+    print(exampleDecisionTable.getObjectsSatisfyingConditions(
+        [("fever", "low"), ("fever", "high")]))
