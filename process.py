@@ -1,5 +1,6 @@
 import pandas as pd
 from lem2 import DecisionTable
+import argparse
 
 
 def negate(function):
@@ -60,7 +61,7 @@ def process_subset(df, keys, subset_ids) -> set:
     return DecisionTable.extractUsedAttributes(rules, verbose=True)
 
 
-def process_df(df, keys, decision):
+def process_df(df, decision):
     """Processes the data and extracts attributes
     considering the subset of ids
 
@@ -68,7 +69,8 @@ def process_df(df, keys, decision):
         df_path (str): path to the dataframe
         decision: decision function
     """
-    # grades are not the attributes
+
+    keys = df.keys().tolist()
     attributes = [k for k in keys if k.find('G')]
 
     lb = lower_bound(df, decision, attributes)
@@ -89,31 +91,35 @@ def process_df(df, keys, decision):
     union = set().union(*lst)
     return union
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', type=str, default='dataset/student-mat.csv', help='default input')
+    parser.add_argument('--column-idx', type=int, default=-1, help='decision column index')
+    parser.add_argument('--decision-lambda', default=lambda df: df['G3'] > 10, help='decision column lambda(exprert opinion) default: df: df["G3"] > 10') 
+    parser.add_argument('--bool', action='store_true', default=False, help='whether decision column contains bool value')
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
 
-    def decision(df):
-        """decision - is the final grade over 10?
-        (can be between 0 and 20)
-        """
-        return df['G3'] > 10
+    args = parse_args()
+    df_path = args.input
 
-    df_path = 'dataset/student-mat.csv'
     df = pd.read_csv(df_path)
     keys = df.keys().tolist()
     print(df.head())
+
+    column_idx = keys[args.column_idx]
+    bool_lambda = lambda df: df[column_idx].str.lower().isin(['true', 'yes', 'tak'])
+    decision = bool_lambda if args.bool else args.decision_lambda
 
     # Limit the number of rows for processing
     df = df.iloc[:200]
     print(f'Number of students: {len(df)}')
 
-    # Subset of keys to be checked by the algorithm
-    sub_keys = keys[19:23]
-    print(f'Subset of keys considered:\n{sub_keys}')
-
     s = sum(decision(df))
     print(f'Number of students who achieved a good result: {s}')
 
-    res = process_df(df, sub_keys, decision)
+    res = process_df(df, decision)
     print('\nUnion of attributes:')
     print(res)
