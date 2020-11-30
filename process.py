@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     column_idx = keys[args.column_idx]
     bool_lambda = lambda df: df[column_idx].str.lower().isin(['true', 'yes', 'tak'])
-    decision = bool_lambda if args.bool else args.decision_lambda
+    decision = bool_lambda if args.bool else eval(args.decision_lambda)
 
     # Limit the number of rows for processing
     df = df.iloc[:200]
