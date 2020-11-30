@@ -1,8 +1,12 @@
 """
     Object -> Int
+
     Condition -> (attribute_name, value)
+
     Attributes -> dict(attribute_name, Attribute)
+
     Attribute -> dict(Object, Value)
+
     AttributeInv -> dict(Value, frozenset(Object))
 """
 from functools import reduce
