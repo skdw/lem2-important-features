@@ -1,4 +1,6 @@
 """
+    Types description
+    
     Object -> Int
 
     Condition -> (attribute_name, value)
@@ -97,23 +99,17 @@ class DecisionTable():
                 G = G & self.tBlock(t)
                 TG = {t for t in self.getAllConditions() if self.tBlock(t)
                       & G} - T
-            # TCopy = frozenset(T)
             for t in T:
                 if(self.TSquare(T-{t}) <= XObjs):
                     T = T - {t}
-            # T = T - {t for t in T if self.TSquare(T-{t}) <= XObjs}
             Tau = Tau | {T}
             G = XObjs - reduce(lambda A, B: A | B,
                                [self.TSquare(T) for T in Tau], frozenset())
         TauCopy = frozenset(Tau)
-        ###
         for T in Tau:
             if reduce(lambda A, B: A | B, [self.TSquare(
             Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs:
                 Tau = Tau - {T}
-        ###
-        # Tau = Tau - {T for T in TauCopy if reduce(lambda A, B: A | B, [self.TSquare(
-        #     Tprim) for Tprim in TauCopy - {T}], frozenset()) == XObjs}
         if verbose:
             DecisionTable.printRules(Tau)
         return Tau
