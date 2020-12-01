@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 from lem2 import DecisionTable
 
@@ -43,10 +44,10 @@ def lower_bound(df, decision, attributes):
     return positive & any_attrs
 
 
-def upper_bound(df, decision, attributes):
+def neg_upper_bound(df, decision, attributes):
 
     neg_dec_any_attrs_pos_dec = lower_bound(df, negate(decision), attributes)
-    return ~neg_dec_any_attrs_pos_dec
+    return neg_dec_any_attrs_pos_dec
 
 
 def process_subset(df, keys, subset_ids) -> set:
@@ -60,7 +61,7 @@ def process_subset(df, keys, subset_ids) -> set:
     return DecisionTable.extractUsedAttributes(rules, verbose=True)
 
 
-def process_df(df, keys, decision):
+def process_df(df, decision):
     """Processes the data and extracts attributes
     considering the subset of ids
 
@@ -68,52 +69,56 @@ def process_df(df, keys, decision):
         df_path (str): path to the dataframe
         decision: decision function
     """
-    # grades are not the attributes
-    attributes = [k for k in keys if k.find('G')]
+
+    keys = df.keys().tolist()
+    attributes = keys[0:-1]
 
     lb = lower_bound(df, decision, attributes)
-    ub = upper_bound(df, decision, attributes)
+    nub = neg_upper_bound(df, decision, attributes)
 
-    # subset_ids = [1, 30, 57]
     lb_subset_ids = positive_indices(lb)
-    ub_subset_ids = positive_indices(ub)
+    nub_subset_ids = positive_indices(nub)
 
     print('\nProcessing the lower bound subset')
     print('(which attributes come with good results)')
-    lset = process_subset(df, keys, lb_subset_ids)
+    lset = process_subset(df, attributes, lb_subset_ids)
     print('\nProcessing the upper bound complement subset')
     print('(which attributes come with bad results)')
-    uset = process_subset(df, keys, ub_subset_ids)
+    uset = process_subset(df, attributes, nub_subset_ids)
 
     lst = [lset, uset]
     union = set().union(*lst)
     return union
 
+def parse_args():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--input', type=str, default='dataset/student-mat.csv', help='data table input')
+    parser.add_argument('--column-idx', type=int, default=-1, help='decision column index')
+    parser.add_argument('--decision-lambda', default="lambda df: df['G3'] > 10", help='decision lambda(exprert opinion)') 
+    parser.add_argument('--bool', action='store_true', default=False, help='whether decision column contains bool value')
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
 
-    def decision(df):
-        """decision - is the final grade over 10?
-        (can be between 0 and 20)
-        """
-        return df['G3'] > 10
+    args = parse_args()
+    df_path = args.input
 
-    df_path = 'dataset/student-mat.csv'
     df = pd.read_csv(df_path)
     keys = df.keys().tolist()
     print(df.head())
 
+    column_idx = keys[args.column_idx]
+    bool_lambda = lambda df: df[column_idx].str.lower().isin(['true', 'yes', 'tak'])
+    decision = bool_lambda if args.bool else eval(args.decision_lambda)
+
     # Limit the number of rows for processing
     df = df.iloc[:200]
-    print(f'Number of students: {len(df)}')
-
-    # Subset of keys to be checked by the algorithm
-    sub_keys = keys[19:23]
-    print(f'Subset of keys considered:\n{sub_keys}')
+    print(f'Number of entries: {len(df)}')
 
     s = sum(decision(df))
-    print(f'Number of students who achieved a good result: {s}')
+    print(f'Number of entries for which the positive decision has been made: {s}')
 
-    res = process_df(df, sub_keys, decision)
+    res = process_df(df, decision)
     print('\nUnion of attributes:')
     print(res)
