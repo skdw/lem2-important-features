@@ -1,14 +1,3 @@
-"""
-    Object -> Int
-
-    Condition -> (attribute_name, value)
-
-    Attributes -> dict(attribute_name, Attribute)
-
-    Attribute -> dict(Object, Value)
-
-    AttributeInv -> dict(Value, frozenset(Object))
-"""
 from functools import reduce
 
 
@@ -61,7 +50,6 @@ class DecisionTable():
         return self.attributesInv[condition[0]][condition[1]]
 
     def TSquare(self, conditions):
-        # for empty conditions collection, maybe we should return empty objs set rather than set of all objects?
         objs = self.getAllObjects()
         for condition in conditions:
             objs = objs & self.tBlock(condition)
@@ -97,13 +85,17 @@ class DecisionTable():
                 G = G & self.tBlock(t)
                 TG = {t for t in self.getAllConditions() if self.tBlock(t)
                       & G} - T
-            T = T - {t for t in T if self.TSquare(T-{t}) <= XObjs}
+            for t in T:
+                if(self.TSquare(T-{t}) <= XObjs):
+                    T = T - {t}
             Tau = Tau | {T}
             G = XObjs - reduce(lambda A, B: A | B,
                                [self.TSquare(T) for T in Tau], frozenset())
         TauCopy = frozenset(Tau)
-        Tau = Tau - {T for T in Tau if reduce(lambda A, B: A | B, [self.TSquare(
-            Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs}
+        for T in Tau:
+            if reduce(lambda A, B: A | B, [self.TSquare(
+            Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs:
+                Tau = Tau - {T}
         if verbose:
             DecisionTable.printRules(Tau)
         return Tau
