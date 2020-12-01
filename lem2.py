@@ -101,6 +101,7 @@ class DecisionTable():
             Tau = Tau | {T}
             G = XObjs - reduce(lambda A, B: A | B,
                                [self.TSquare(T) for T in Tau], frozenset())
+        TauCopy = frozenset(Tau)
         Tau = Tau - {T for T in Tau if reduce(lambda A, B: A | B, [self.TSquare(
             Tprim) for Tprim in Tau - {T}], frozenset()) == XObjs}
         if verbose:

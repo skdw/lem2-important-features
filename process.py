@@ -44,10 +44,10 @@ def lower_bound(df, decision, attributes):
     return positive & any_attrs
 
 
-def upper_bound(df, decision, attributes):
+def neg_upper_bound(df, decision, attributes):
 
     neg_dec_any_attrs_pos_dec = lower_bound(df, negate(decision), attributes)
-    return ~neg_dec_any_attrs_pos_dec
+    return neg_dec_any_attrs_pos_dec
 
 
 def process_subset(df, keys, subset_ids) -> set:
@@ -74,17 +74,17 @@ def process_df(df, decision):
     attributes = keys[0:-1]
 
     lb = lower_bound(df, decision, attributes)
-    ub = upper_bound(df, decision, attributes)
+    nub = neg_upper_bound(df, decision, attributes)
 
     lb_subset_ids = positive_indices(lb)
-    ub_subset_ids = positive_indices(ub)
+    nub_subset_ids = positive_indices(nub)
 
     print('\nProcessing the lower bound subset')
     print('(which attributes come with good results)')
     lset = process_subset(df, attributes, lb_subset_ids)
     print('\nProcessing the upper bound complement subset')
     print('(which attributes come with bad results)')
-    uset = process_subset(df, attributes, ub_subset_ids)
+    uset = process_subset(df, attributes, nub_subset_ids)
 
     lst = [lset, uset]
     union = set().union(*lst)
