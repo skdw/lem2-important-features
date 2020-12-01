@@ -71,21 +71,20 @@ def process_df(df, decision):
     """
 
     keys = df.keys().tolist()
-    attributes = [k for k in keys if k.find('G')]
+    attributes = keys[0:-1]
 
     lb = lower_bound(df, decision, attributes)
     ub = upper_bound(df, decision, attributes)
 
-    # subset_ids = [1, 30, 57]
     lb_subset_ids = positive_indices(lb)
     ub_subset_ids = positive_indices(ub)
 
     print('\nProcessing the lower bound subset')
     print('(which attributes come with good results)')
-    lset = process_subset(df, keys, lb_subset_ids)
+    lset = process_subset(df, attributes, lb_subset_ids)
     print('\nProcessing the upper bound complement subset')
     print('(which attributes come with bad results)')
-    uset = process_subset(df, keys, ub_subset_ids)
+    uset = process_subset(df, attributes, ub_subset_ids)
 
     lst = [lset, uset]
     union = set().union(*lst)
@@ -115,10 +114,10 @@ if __name__ == "__main__":
 
     # Limit the number of rows for processing
     df = df.iloc[:200]
-    print(f'Number of students: {len(df)}')
+    print(f'Number of entries: {len(df)}')
 
     s = sum(decision(df))
-    print(f'Number of students who achieved a good result: {s}')
+    print(f'Number of entries for which the positive decision has been made: {s}')
 
     res = process_df(df, decision)
     print('\nUnion of attributes:')
