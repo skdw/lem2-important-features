@@ -1,16 +1,3 @@
-"""
-    Types description
-    
-    Object -> Int
-
-    Condition -> (attribute_name, value)
-
-    Attributes -> dict(attribute_name, Attribute)
-
-    Attribute -> dict(Object, Value)
-
-    AttributeInv -> dict(Value, frozenset(Object))
-"""
 from functools import reduce
 
 
@@ -63,7 +50,6 @@ class DecisionTable():
         return self.attributesInv[condition[0]][condition[1]]
 
     def TSquare(self, conditions):
-        # for empty conditions collection, maybe we should return empty objs set rather than set of all objects?
         objs = self.getAllObjects()
         for condition in conditions:
             objs = objs & self.tBlock(condition)
