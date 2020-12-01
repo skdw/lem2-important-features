@@ -2,10 +2,8 @@ Program się uruchamia za pomocą anaconda prompt na wydziałowych komuterach na
 
 usage: process.py [--input INPUT] [--column-idx COLUMN_IDX] [--decision-lambda DECISION_LAMBDA] [--bool]
 
-optional arguments:
-  --input INPUT         data table input (default: dataset/student-mat.csv)
-  --column-idx COLUMN_IDX
-                        decision column index (default: -1)
-  --decision-lambda DECISION_LAMBDA
-                        decision lambda(exprert opinion) (default: lambda df: df['G3'] > 10)
-  --bool                whether decision column contains bool value, otherwise int (default: False)
+opcjonalne argumenty:
+  --input INPUT         dane wejściowe (default: dataset/student-mat.csv)  
+  --column-idx COLUMN_IDX         indeks tabeli decyzyjnej (default: -1)  
+  --decision-lambda DECISION_LAMBDA         decyzyjna funkcja lambda (opinia eksperta) (default: lambda df: df['G3'] > 10)  
+  --bool         flaga mówiąca, czy w tabeli decyzyjnej znajduje się bool ( w przeciwnym przypadku int) (default: False)
