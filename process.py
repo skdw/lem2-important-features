@@ -1,6 +1,6 @@
+import argparse
 import pandas as pd
 from lem2 import DecisionTable
-import argparse
 
 
 def negate(function):
@@ -92,10 +92,10 @@ def process_df(df, decision):
     return union
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, default='dataset/student-mat.csv', help='default input')
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--input', type=str, default='dataset/student-mat.csv', help='data table input')
     parser.add_argument('--column-idx', type=int, default=-1, help='decision column index')
-    parser.add_argument('--decision-lambda', default=lambda df: df['G3'] > 10, help='decision column lambda(exprert opinion) default: df: df["G3"] > 10') 
+    parser.add_argument('--decision-lambda', default="lambda df: df['G3'] > 10", help='decision lambda(exprert opinion)') 
     parser.add_argument('--bool', action='store_true', default=False, help='whether decision column contains bool value')
     return parser.parse_args()
 
