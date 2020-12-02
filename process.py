@@ -106,8 +106,7 @@ if __name__ == "__main__":
 
     df = pd.read_csv(df_path)
     keys = df.keys().tolist()
-    print(df.head())
-
+    print(df)
     column_idx = keys[args.column_idx]
     bool_lambda = lambda df: df[column_idx].str.lower().isin(['true', 'yes', 'tak'])
     decision = bool_lambda if args.bool else eval(args.decision_lambda)
